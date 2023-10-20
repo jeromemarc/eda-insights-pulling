@@ -1,0 +1,14 @@
+- name: Watch for new events
+  hosts: localhost
+  sources:
+    - new_events:
+        instance: "{{ HCC_HOST }}"
+        username: "{{ HCC_USERNAME }}"
+        password: "{{ HCC_PASSWORD }}"
+        interval: 60
+  rules:
+    - name: New event received
+      condition: event.id is defined
+      action:
+        run_playbook:
+          name: playbooks/new_event.yml

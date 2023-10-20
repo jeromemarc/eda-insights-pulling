@@ -1,0 +1,12 @@
+---
+- name: Get data from Red Hat Insights event
+  hosts: localhost
+  gather_facts: false
+  vars:
+    event: "{{ ansible_eda.event.payload | from_json }}"
+
+  tasks:
+    - name: Print event data
+      when: event is defined
+      ansible.builtin.debug:
+        msg: "Bundle: {{ event.bundle }}, Application: {{ event.application }}, Event Type: {{ event.event_type }}, Events: {{ event.events }}"
