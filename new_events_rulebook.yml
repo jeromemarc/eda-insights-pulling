@@ -3,8 +3,7 @@
   sources:
     - new_events:
         instance: "{{ HCC_HOST }}"
-        username: "{{ HCC_USERNAME }}"
-        password: "{{ HCC_PASSWORD }}"
+        token: "{{ HCC_TOKEN }}"
         interval: 60
   rules:
     - name: New event received

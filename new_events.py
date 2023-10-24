@@ -42,20 +42,19 @@ import aiohttp
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
 
     instance = args.get("instance")
-    username = args.get("username")
-    password = args.get("password")
+    token = args.get("token")
     today = date.today()
     yesterday = today - timedelta(days = 1)
     query    = args.get("query", "endDate=" + today.strftime('%Y-%m-%d') +"&startDate=" + yesterday.strftime('%Y-%m-%d') + "&includePayload=true&limit=20")
     interval = int(args.get("interval", 60))
+    headers =  {'accept': 'application/json','Authorization': "Bearer {}".format(token)}
 
     start_time = time.time()
     start_time_str = time.strftime('%Y-%m-%d', time.gmtime(start_time))
     printed_events = set()
-    async with aiohttp.ClientSession() as session:
-        auth = aiohttp.BasicAuth(login=username, password=password)
+    async with aiohttp.ClientSession(headers=headers) as session:
         while True:
-            async with session.get(f'{instance}/api/notifications/v1.0/notifications/events?{query}', auth=auth) as resp:
+            async with session.get(f'{instance}/api/notifications/v1.0/notifications/events?{query}') as resp:
                 if resp.status == 200:
 
                     events = await resp.json()
@@ -73,12 +72,11 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
 # this is only called when testing plugin directly, without ansible-rulebook
 if __name__ == "__main__":
     instance = os.environ.get('HCC_HOST')
-    username = os.environ.get('HCC_USERNAME')
-    password = os.environ.get('HCC_PASSWORD')
+    token = os.environ.get('HCC_TOKEN')
 
     class MockQueue:
         print(f"Waiting for events...")
         async def put(self, event):
             print(event)
 
-    asyncio.run(main(MockQueue(), {"instance": instance, "username": username, "password": password}))
+    asyncio.run(main(MockQueue(), {"instance": instance, "token": token}))

@@ -1,6 +1,6 @@
 # Event-Driven Ansible source plugin for pulling Red Hat Insigths events
 
-This directory contains an example source plugin (`new_events.py`) for Event-Drive Ansible (EDA) along with a rulebook and playbook to execute. The source plugin accepts arguments for Hybrid Cloud Console instance, and username, password for basic authentication.
+This directory contains an example source plugin (`new_events.py`) for Event-Drive Ansible (EDA) along with a rulebook and playbook to execute. The source plugin accepts arguments for Hybrid Cloud Console instance, and token for authentication. More information on setting up an authentication token for Red Hat APIs can be found on https://access.redhat.com/management/api
 
 The plugin queries the Insights API Notifications get_events to retrieve a list of triggered events for the account on that day. It then processes all events and wait until the next query (interval value in seconds). The next result will be checked for new event ids and will be processed accordingly.
 
@@ -15,17 +15,17 @@ The plugin queries the Insights API Notifications get_events to retrieve a list 
     - ansible.eda>=1.3.3
 ----
 
-- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_USERNAME`, `HCC_PASSWORD` and run:
+- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_TOKEN` and run:
 ~~~
 python new_events.py
 ~~~
 
-- To test the script from `ansible-rulebook` (the CLI component of EDA), set environment variables for `HCC_HOST`, `HCC_USERNAME`, `HCC_PASSWORD` and run:
+- To test the script from `ansible-rulebook` (the CLI component of EDA), set environment variables for `HCC_HOST`, `HCC_TOKEN` and run:
 ~~~
 ansible-rulebook --rulebook new_events_rulebook.yml \
         -i inventory.yml \
         -S . \
-        --env-vars HCC_HOST,HCC_USERNAME,HCC_PASSWORD \
+        --env-vars HCC_HOST,HCC_TOKEN \
         --print-events
 ~~~
 
@@ -39,8 +39,7 @@ The `--env-vars` flag passes the specified environment variables into the execut
   sources:
     - new_events:
         instance: "{{ HCC_HOST }}"
-        username: "{{ HCC_USERNAME }}"
-        password: "{{ HCC_PASSWORD }}" 
+        username: "{{ HCC_TOKEN }}"
         interval: 60
 ~~~~
 
