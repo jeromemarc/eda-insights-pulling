@@ -4,6 +4,7 @@
     - new_events:
         instance: "{{ HCC_HOST }}"
         token: "{{ HCC_TOKEN }}"
+        proxy: "{{ HCC_PROXY | default('') }}"
         interval: 60
   rules:
     - name: New event received

@@ -15,17 +15,17 @@ The plugin queries the Insights API Notifications get_events to retrieve a list 
     - ansible.eda>=1.3.3
 ----
 
-- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_TOKEN` and run:
+- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_TOKEN`, `HCC_PROXY` (optional) and run:
 ~~~
 python new_events.py
 ~~~
 
-- To test the script from `ansible-rulebook` (the CLI component of EDA), set environment variables for `HCC_HOST`, `HCC_TOKEN` and run:
+- To test the script from `ansible-rulebook` (the CLI component of EDA), set environment variables for `HCC_HOST`, `HCC_TOKEN` , `HCC_PROXY` (optional) and run:
 ~~~
 ansible-rulebook --rulebook new_events_rulebook.yml \
         -i inventory.yml \
         -S . \
-        --env-vars HCC_HOST,HCC_TOKEN \
+        --env-vars HCC_HOST,HCC_TOKEN,HCC_PROXY \
         --print-events
 ~~~
 
@@ -39,7 +39,8 @@ The `--env-vars` flag passes the specified environment variables into the execut
   sources:
     - new_events:
         instance: "{{ HCC_HOST }}"
-        username: "{{ HCC_TOKEN }}"
+        token: "{{ HCC_TOKEN }}"
+	proxy: "{{ HCC_PROXY | default('') }}"
         interval: 60
 ~~~~
 
