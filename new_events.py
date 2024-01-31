@@ -76,9 +76,6 @@ if __name__ == "__main__":
     instance = os.environ.get('HCC_HOST')
     token = os.environ.get('HCC_TOKEN')
     proxy = os.environ.get('HCC_PROXY')
-#    proxy = ""
-#    if 'HCC_PROXY' in os.environ:
-#            proxy = os.environ.get('HCC_PROXY')
 
     class MockQueue:
         print(f"Waiting for events...")
