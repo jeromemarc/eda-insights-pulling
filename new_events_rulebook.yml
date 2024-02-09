@@ -2,9 +2,11 @@
   hosts: localhost
   sources:
     - new_events:
-        instance: "{{ HCC_HOST }}"
-        token: "{{ HCC_TOKEN }}"
+        instance: "{{ HCC_HOST | default('https://console.redhat.com') }}"
         proxy: "{{ HCC_PROXY | default('') }}"
+        token_url: "{{ HCC_TOKEN_URL | default('https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token') }}"
+        client_id: "{{ HCC_CLIENT_ID }}"
+        client_secret: "{{ HCC_CLIENT_SECRET }}"
         interval: 60
   rules:
     - name: New event received

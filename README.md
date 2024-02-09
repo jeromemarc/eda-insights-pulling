@@ -15,17 +15,17 @@ The plugin queries the Insights API Notifications get_events to retrieve a list 
     - ansible.eda>=1.3.3
 ----
 
-- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_TOKEN`, `HCC_PROXY` (optional) and run:
+- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_TOKEN` (optional), `HCC_PROXY` (optional), `HCC_TOKEN_URL` (optional), `HCC_CLIENT_ID`, `HCC_CLIENT_SECRET` and run:
 ~~~
 python new_events.py
 ~~~
 
-- To test the script from `ansible-rulebook` (the CLI component of EDA), set environment variables for `HCC_HOST`, `HCC_TOKEN` , `HCC_PROXY` (optional) and run:
+- To test the script from `ansible-rulebook` (the CLI component of EDA), set environment variables for `HCC_HOST` (optional), `HCC_PROXY` (optional), `HCC_TOKEN_URL` (optional), `HCC_CLIENT_ID`, `HCC_CLIENT_SECRET` and run:
 ~~~
 ansible-rulebook --rulebook new_events_rulebook.yml \
         -i inventory.yml \
         -S . \
-        --env-vars HCC_HOST,HCC_TOKEN,HCC_PROXY \
+        --env-vars HCC_HOST,HCC_PROXY,HCC_TOKEN_URL,HCC_CLIENT_ID,HCC_CLIENT_SECRET \
         --print-events
 ~~~
 
@@ -38,9 +38,11 @@ The `--env-vars` flag passes the specified environment variables into the execut
 ~~~
   sources:
     - new_events:
-        instance: "{{ HCC_HOST }}"
-        token: "{{ HCC_TOKEN }}"
-	proxy: "{{ HCC_PROXY | default('') }}"
+        instance: "{{ HCC_HOST | default('https://console.redhat.com') }}"
+        proxy: "{{ HCC_PROXY | default('') }}"
+        token_url: "{{ HCC_TOKEN_URL | default('https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token') }}"
+        client_id: "{{ HCC_CLIENT_ID }}"
+        client_secret: "{{ HCC_CLIENT_SECRET }}"
         interval: 60
 ~~~~
 
