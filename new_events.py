@@ -3,28 +3,28 @@ new_events.py
 
 event-driven-ansible source plugin example
 
-Poll Red Hat Hybrid Cloud Console API for new events
-Only retrieves records created after the script began executing
+Poll Red Hat Hybrid Cloud Console API for new events triggered on the day of execution.
 This script can be tested outside of ansible-rulebook by specifying
-environment variables for HCC_HOST, HCC_PROXY, HCC_TOKEN_URL, HCC_CLIENT_ID, HCC_CLIENT_SECRET (optional)
+environment variables for HCC_HOST (optional), HCC_PROXY (optional), HCC_TOKEN_URL (optional), HCC_CLIENT_ID, and HCC_CLIENT_SECRET
 
 Arguments:
-  - instance:       Red Hat Hybrid Cloud Console URL (e.g. https://console.redhat.com)
+  - instance:       (optional) Red Hat Hybrid Cloud Console URL. Default is https://console.redhat.com
   - proxy:          (optional) Proxy URL. Defaults to no proxy
-  - token_url:      Access server token URL (e.g. https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token)
+  - token_url:      (optional) Access server token URL. Default is https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
   - client_id:      Public identifier required for authorization
   - client_secret:  Secret required for authorization
   - query:          (optional) Events to query. Defaults to all events created today
-  - interval:       (optional) How often to poll for new records. Defaults to 60 seconds
+  - interval:       (optional) How often to poll for new events. Default is 60 seconds
 
 - name: Watch for new events
   hosts: localhost
   sources:
     - new_events:
-        instance: https://console.redhat.com
-        token_url: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
-        client_id: <client id>
-        client secret: <client secret>
+        instance: "{{ HCC_HOST | default('https://console.redhat.com') }}"
+        proxy: "{{ HCC_PROXY | default('') }}"
+        token_url: "{{ HCC_TOKEN_URL | default('https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token') }}"
+        client_id: "{{ HCC_CLIENT_ID }}"
+        client_secret: "{{ HCC_CLIENT_SECRET }}"
         interval: 60
   rules:
     - name: New event received
@@ -45,6 +45,7 @@ import aiohttp
 
 async def get_token(args: Dict[str, Any]):
     token_url = args.get("token_url")
+    if f'{token_url}' == 'None': token_url = "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
     proxy = args.get("proxy")
     if f'{proxy}' == 'None': proxy = ""
     client_id = args.get("client_id")
@@ -66,6 +67,7 @@ async def get_token(args: Dict[str, Any]):
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
 
     instance = args.get("instance")
+    if f'{instance}' == 'None': instance = "https://console.redhat.com"
     proxy = args.get("proxy")
     if f'{proxy}' == 'None': proxy = ""
     today = date.today()

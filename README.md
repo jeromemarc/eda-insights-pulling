@@ -1,10 +1,10 @@
 # Event-Driven Ansible source plugin for pulling Red Hat Insigths events
 
-This directory contains an example source plugin (`new_events.py`) for Event-Drive Ansible (EDA) along with a rulebook and playbook to execute. The source plugin accepts arguments for Hybrid Cloud Console instance, and token for authentication. More information on setting up an authentication token for Red Hat APIs can be found on https://access.redhat.com/management/api
+This directory contains an example source plugin (`new_events.py`) for Event-Drive Ansible (EDA) along with a rulebook and playbook to execute. The source plugin accepts arguments for Hybrid Cloud Console instance, and uses service account token-based authentication. More information on setting up a service account for Red Hat Hybrid Cloud Console can be found on https://access.redhat.com/articles/7036194
 
-The plugin queries the Insights API Notifications get_events to retrieve a list of triggered events for the account on that day. It then processes all events and wait until the next query (interval value in seconds). The next result will be checked for new event ids and will be processed accordingly.
+The plugin queries the Insights API Notifications /notifications/events endpoint to retrieve a list of triggered events for the account on that day. It then processes all events and wait until the next query (interval value in seconds). The next result will be checked for new event ids and will be processed accordingly.
 
-**Note** this plugin is a proof-of-concept and is meant to be an example to get started. It is in no way ready for production use. The defaultvalues queries all events triggered today (smalest window range on the API) and happens every 60 sec.
+**Note** this plugin is a proof-of-concept and is meant to be an example to get started. It is in no way ready for production use. The default parameter values query all events triggered today (smalest window range on the API) and repeat every 60 sec.
 
 ## Testing
 
@@ -15,7 +15,7 @@ The plugin queries the Insights API Notifications get_events to retrieve a list 
     - ansible.eda>=1.3.3
 ----
 
-- To test the script independently, first set environment variables for `HCC_HOST`, `HCC_TOKEN` (optional), `HCC_PROXY` (optional), `HCC_TOKEN_URL` (optional), `HCC_CLIENT_ID`, `HCC_CLIENT_SECRET` and run:
+- To test the script independently, first set environment variables for `HCC_HOST` (optional), `HCC_TOKEN` (optional), `HCC_PROXY` (optional), `HCC_TOKEN_URL` (optional), `HCC_CLIENT_ID`, `HCC_CLIENT_SECRET` and run:
 ~~~
 python new_events.py
 ~~~
