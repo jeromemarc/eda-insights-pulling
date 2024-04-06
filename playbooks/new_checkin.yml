@@ -1,0 +1,146 @@
+---
+- name: Process incoming event from Red Hat Hybrid Cloud Console
+  hosts: localhost
+  gather_facts: false
+  vars:
+    event: "{{ ansible_eda.event.payload | from_json }}"
+    access_token: "{{ lookup('ansible.builtin.env', 'HCC_ACCESS_TOKEN') }}"
+
+  tasks:
+    - name: Debug - Output incoming event payload
+      block:
+        - name: Print event data
+          when: event is defined
+          ansible.builtin.debug:
+            msg: "Bundle: {{ event.bundle }}, Application: {{ event.application }}, Event Type: {{ event.event_type }}, Events: {{ event.events }}"
+            verbosity: 3
+      rescue:
+        - name: Debug - Print event data (wrong or unexpected schema)
+          when: event is defined
+          ansible.builtin.debug:
+            msg: "Event: {{ event }}" 
+            verbosity: 3
+
+    - name: Filter event type and ignore all events but our Policy
+      set_fact:
+        application: "{{ event.application }}"
+
+    - meta: end_play
+      when: not application == "policies"
+
+    - meta: end_play
+      when: not event.events[0].name == "hostgroup tag and/or group tag are present"
+
+    - name: Retrieve system_uuid from event
+      set_fact:
+        system_uuid: "{{ event | json_query(\"context.inventory_id\") }}"
+      register: this
+      failed_when: this is failed
+
+    # Check current group assignment on system
+    - name: Retrieve system details
+      uri:
+        url: "https://console.redhat.com/api/inventory/v1/hosts?hostname_or_id={{ system_uuid }}&per_page=50&page=1&staleness=fresh&staleness=stale&staleness=stale_warning"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        return_content: true
+        body_format: json
+        status_code: 200
+      register: system
+
+    # Retrieve current group assignment (there should only be one group)
+    - name: Retrieve current group assignment
+      set_fact:
+        assigned_group: "{{ system.content | from_json | json_query(\"results[0].groups[0].name\") }}"
+      register: this
+      failed_when: this is failed
+
+    - name: Debug - Display assigned group name
+      when: assigned_groupd_group is defined
+      ansible.builtin.debug:
+        msg: "System UUID: {{ system_uuid}}, Insights group: {{ assigned_group }}"
+        verbosity: 3
+
+    # Retrieve 'hostgroup' Satellite tag value or 'group' system tag value if 'hostgroup' is missing, if none is set remove system from assigned group
+    - name: Retrieve hostgroup tag from event
+      set_fact:
+        group_name: "{{ event | json_query (\"context.tags[?key=='hostgroup'].value\") }}"
+      register: this
+      failed_when: this is failed
+
+    - name: Retrieve group tag from event (if hostgroup is not set)
+      when: group_name != ""
+      set_fact:
+        group_name: "{{ event | json_query (\"context.tags[?key=='group'].value\") }}"
+      register: this
+      failed_when: this is failed
+
+    - name: Debug - Display current group assignment
+      when: assigned_group is defined and group_name is defined
+      ansible.builtin.debug:
+        msg: "System UUID: {{ system_uuid}}, assigned group: {{ assigned_group }}, targeted group: {{ group_name[0] }}"
+        verbosity: 3
+
+    # Exit if assignment is already correct (no group or same group)
+    - meta: end_play
+      when: assigned_group == "{{ group_name[0] }}"
+
+    # Remove group assignment from the system
+    - name: Remove group assignment (system is currently assigned to different group)
+      when: assigned_group != ""
+      uri:
+        url: "https://console.redhat.com/api/inventory/v1/groups/hosts/{{ system_uuid }}"
+        method: DELETE
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        return_content: true
+        body_format: json
+        status_code: 204
+      register: this
+
+    # Check if group exists in inventory, if not create a new group
+    - name: Query Inventory Group by name
+      when: group_name != ""
+      uri:
+        url: "https://console.redhat.com/api/inventory/v1/groups?name={{ group_name[0] | urlencode }}&per_page=50&page=1"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        return_content: true
+        body_format: json
+        status_code: 200
+      register: this
+
+    # Get group_id from query by name
+    - name: Get group_id
+      when: group_name != "" and this.json.count == 1
+      set_fact:
+        group_id: "{{ this.json.results[0].id }}"
+
+    # Assign system to targeted (existing) group
+    - name: Assign system to targeted group
+      when: group_name != "" and group_id != ""
+      uri:
+        url: "https://console.redhat.com/api/inventory/v1/groups/{{ group_id }}/hosts"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        body_format: json
+        status_code: 200
+        body:
+        - "{{ system_uuid }}"
+
+    # Assign system to targeted (new) group
+    - name: Assign system to newly created group
+      when: group_name != "" and this.json.count == 0
+      uri:
+        url: "https://console.redhat.com/api/inventory/v1/groups"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        body_format: json
+        status_code: 201
+        body:
+          name: "{{ group_name[0] }}"
+          host_ids: "[ \"{{ system_uuid }}\" ]"
